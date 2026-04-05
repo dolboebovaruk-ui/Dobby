@@ -1,4 +1,4 @@
-name: Builder
+name: Android Builder (armeabi-v7a & arm64-v8a)
 
 on:
   push:
@@ -11,56 +11,55 @@ env:
   NDK_VERSION: r25b
 
 jobs:
-  delete_latest_release:
-    runs-on: ubuntu-latest
-    steps:
-    - name: checkout master
-      uses: actions/checkout@master
-
-    - name: delete latest release
-      uses: dev-drprasad/delete-tag-and-release@v0.2.1
-      with:
-        delete_release: true
-        tag_name: latest
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   android_build:
     runs-on: ubuntu-latest
-    needs: delete_latest_release
     steps:
-    - name: checkout master
-      uses: actions/checkout@master
+      - name: Checkout master
+        uses: actions/checkout@v3
 
-    - name: init android build env
-      run: |
-        sh scripts/setup_linux_cross_compile.sh
-        mkdir -p artifact
-      shell: bash
+      - name: Setup Android cross compile environment
+        run: |
+          sh scripts/setup_linux_cross_compile.sh
+          mkdir -p artifact
+        shell: bash
 
-    - name: compile android
-      run: |
-        python3 scripts/platform_builder.py \
-          --platform=android \
-          --arch=all \
-          --cmake_dir=$HOME/opt/cmake-$CMAKE_VERSION \
-          --llvm_dir=$HOME/opt/llvm-$LLVM_VERSION \
-          --android_ndk_dir=$HOME/opt/ndk-$NDK_VERSION
-        cp include/dobby.h build/android
-        tar -zcvf build/dobby-android-all.tar.gz build/android
-        cp build/dobby-android-all.tar.gz artifact/
-      shell: bash
+      - name: Build Android armeabi-v7a (32-bit)
+        run: |
+          python3 scripts/platform_builder.py \
+            --platform=android \
+            --arch=armeabi-v7a \
+            --cmake_dir=$HOME/opt/cmake-$CMAKE_VERSION \
+            --llvm_dir=$HOME/opt/llvm-$LLVM_VERSION \
+            --android_ndk_dir=$HOME/opt/ndk-$NDK_VERSION
+          cp include/dobby.h build/android
+          tar -zcvf build/dobby-android-armeabi-v7a.tar.gz build/android
+          cp build/dobby-android-armeabi-v7a.tar.gz artifact/
+        shell: bash
 
-    - name: print output
-      run: |
-        ls -lha .
+      - name: Build Android arm64-v8a (64-bit)
+        run: |
+          python3 scripts/platform_builder.py \
+            --platform=android \
+            --arch=arm64-v8a \
+            --cmake_dir=$HOME/opt/cmake-$CMAKE_VERSION \
+            --llvm_dir=$HOME/opt/llvm-$LLVM_VERSION \
+            --android_ndk_dir=$HOME/opt/ndk-$NDK_VERSION
+          cp include/dobby.h build/android
+          tar -zcvf build/dobby-android-arm64-v8a.tar.gz build/android
+          cp build/dobby-android-arm64-v8a.tar.gz artifact/
+        shell: bash
 
-    - name: update release
-      uses: ncipollo/release-action@v1
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        tag: latest
-        body: "a lightweight, multi-platform, multi-architecture hook framework"
-        artifacts: "build/dobby-android-all.tar.gz"
-        allowUpdates: true
-        replacesArtifacts: true
+      - name: List artifacts
+        run: ls -lha artifact/
+
+      - name: Create/Update release
+        uses: ncipollo/release-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: latest
+          body: "Dobby Android builds: armeabi-v7a (32-bit) and arm64-v8a (64-bit)"
+          artifacts: |
+            artifact/dobby-android-armeabi-v7a.tar.gz
+            artifact/dobby-android-arm64-v8a.tar.gz
+          allowUpdates: true
+          replacesArtifacts: true
