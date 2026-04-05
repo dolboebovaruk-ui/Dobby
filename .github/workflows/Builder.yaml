@@ -32,6 +32,11 @@ jobs:
     - name: checkout master
       uses: actions/checkout@master
 
+    # 🔥 FIX ДЛЯ DOBBY
+    - name: Fix Dobby include bug
+      run: |
+        sed -i 's|"core/arch/Cpu.h"|"source/core/arch/Cpu.h"|g' $(grep -rl 'core/arch/Cpu.h' source)
+
     - name: init linux cross compile env
       run: |
         sh scripts/setup_linux_cross_compile.sh
@@ -44,7 +49,6 @@ jobs:
         cp include/dobby.h build/linux
         tar -zcvf build/dobby-linux-all.tar.gz build/linux
         cp build/dobby-linux-all.tar.gz artifact/
-        
       shell: bash
     
     - name: compile android
@@ -64,7 +68,7 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         tag: latest
-        body: "a lightweight, multi-platform, multi-architecture exploit hook framework"
+        body: "a lightweight, multi-platform, multi-architecture hook framework"
         artifacts: "build/dobby-linux-all.tar.gz,build/dobby-android-all.tar.gz"
         allowUpdates: true
         replacesArtifacts: true
@@ -75,6 +79,11 @@ jobs:
     steps:
     - name: checkout dev
       uses: actions/checkout@master
+
+    # 🔥 FIX ДЛЯ DOBBY (и тут тоже)
+    - name: Fix Dobby include bug
+      run: |
+        sed -i '' 's|"core/arch/Cpu.h"|"source/core/arch/Cpu.h"|g' $(grep -rl 'core/arch/Cpu.h' source)
 
     - name: init macos compile env
       run: |
@@ -88,7 +97,6 @@ jobs:
         cp include/dobby.h build/macos
         tar -zcvf build/dobby-macos-all.tar.gz build/macos
         cp build/dobby-macos-all.tar.gz artifact/
-        
       shell: bash
     
     - name: compile iphoneos
@@ -108,7 +116,7 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         tag: latest
-        body: "a lightweight, multi-platform, multi-architecture exploit hook framework"
+        body: "a lightweight, multi-platform, multi-architecture hook framework"
         artifacts: "build/dobby-macos-all.tar.gz,build/dobby-iphoneos-all.tar.gz"
         allowUpdates: true
         replacesArtifacts: true
